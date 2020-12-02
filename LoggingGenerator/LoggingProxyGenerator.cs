@@ -33,6 +33,10 @@ namespace LoggingGenerator
 
       var compilation = context.Compilation;
 
+      context.AnalyzerConfigOptions.GlobalOptions
+        .TryGetValue("build_property.LogEncryption", out var logEncryptionStr);
+      bool.TryParse(logEncryptionStr, out var encryptLog);
+
       var syntaxReceiver = (SyntaxReceiver) context.SyntaxReceiver;
       var loggingTargets = syntaxReceiver.TypeDeclarationsWithAttributes;
 
@@ -79,12 +83,12 @@ namespace LoggingGenerator
       {
         context.CancellationToken.ThrowIfCancellationRequested();
 
-        var proxySource = GenerateProxy(targetType, namespaceName);
+        var proxySource = GenerateProxy(targetType, namespaceName, encryptLog);
         context.AddSource($"{targetType.Name}.Logging.cs", proxySource);
       }
     }
 
-    private string GenerateProxy(ITypeSymbol targetType, string namespaceName)
+    private string GenerateProxy(ITypeSymbol targetType, string namespaceName, bool encrypt)
     {
       var allInterfaceMethods = targetType.AllInterfaces
         .SelectMany(x => x.GetMembers())
@@ -167,6 +171,11 @@ namespace {namespaceName}
 
       string Log(string logLevel, string message)
       {
+        if (encrypt)
+        {
+          message = $"System.Convert.ToBase64String(Encoding.UTF8.GetBytes({message}))";
+        }
+
         return $"      _logger.Log({logLevel}, {message});";
       }
     }
