@@ -36,6 +36,13 @@ namespace LoggingGenerator
       var syntaxReceiver = (SyntaxReceiver) context.SyntaxReceiver;
       var loggingTargets = syntaxReceiver.TypeDeclarationsWithAttributes;
 
+      var logSrc = "class LogAttribute : System.Attribute { }";
+      context.AddSource("Log.cs", logSrc);
+
+      var options = (CSharpParseOptions) compilation.SyntaxTrees.First().Options;
+      var logSyntaxTree = CSharpSyntaxTree.ParseText(logSrc, options);
+      compilation = compilation.AddSyntaxTrees(logSyntaxTree);
+
       var logAttribute = compilation.GetTypeByMetadataName("LogAttribute");
 
       var targetTypes = new HashSet<ITypeSymbol>();

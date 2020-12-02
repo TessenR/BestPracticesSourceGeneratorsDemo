@@ -6,8 +6,6 @@ using NLog.Config;
 using NLog.Targets;
 using LoggingImplDefault;
 
-class LogAttribute : System.Attribute { }
-
 namespace GeneratorsBestPracticesLiveDemo
 {
   class Program
