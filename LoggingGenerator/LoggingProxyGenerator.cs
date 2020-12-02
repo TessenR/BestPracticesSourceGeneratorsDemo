@@ -7,20 +7,34 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace LoggingGenerator
 {
+  public class SyntaxReceiver : ISyntaxReceiver
+  {
+    public HashSet<TypeDeclarationSyntax> TypeDeclarationsWithAttributes { get; } = new();
+
+    public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
+    {
+      if (syntaxNode is TypeDeclarationSyntax declaration
+          && declaration.AttributeLists.Any())
+      {
+        TypeDeclarationsWithAttributes.Add(declaration);
+      }
+    }
+  }
+
   [Generator]
   public class LoggingProxyGenerator : ISourceGenerator
   {
-    public void Initialize(GeneratorInitializationContext context) {}
+    public void Initialize(GeneratorInitializationContext context)
+      => context.RegisterForSyntaxNotifications(() => new SyntaxReceiver());
 
     public void Execute(GeneratorExecutionContext context)
     {
       var namespaceName = "LoggingImplDefault";
 
       var compilation = context.Compilation;
-      var loggingTargets = compilation.SyntaxTrees
-        .SelectMany(x => x.GetRoot()
-          .DescendantNodesAndSelf()
-          .OfType<TypeDeclarationSyntax>());
+
+      var syntaxReceiver = (SyntaxReceiver) context.SyntaxReceiver;
+      var loggingTargets = syntaxReceiver.TypeDeclarationsWithAttributes;
 
       var logAttribute = compilation.GetTypeByMetadataName("LogAttribute");
 
