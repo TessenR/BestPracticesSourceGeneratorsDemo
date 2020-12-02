@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
@@ -47,6 +48,8 @@ namespace LoggingGenerator
       var logSyntaxTree = CSharpSyntaxTree.ParseText(logSrc, options);
       compilation = compilation.AddSyntaxTrees(logSyntaxTree);
 
+      var keyFile = context.AdditionalFiles.FirstOrDefault(x => x.Path.EndsWith(".key"));
+
       var logAttribute = compilation.GetTypeByMetadataName("LogAttribute");
 
       var targetTypes = new HashSet<ITypeSymbol>();
@@ -83,12 +86,12 @@ namespace LoggingGenerator
       {
         context.CancellationToken.ThrowIfCancellationRequested();
 
-        var proxySource = GenerateProxy(targetType, namespaceName, encryptLog);
+        var proxySource = GenerateProxy(targetType, namespaceName, encryptLog, keyFile?.GetText()?.ToString());
         context.AddSource($"{targetType.Name}.Logging.cs", proxySource);
       }
     }
 
-    private string GenerateProxy(ITypeSymbol targetType, string namespaceName, bool encrypt)
+    private string GenerateProxy(ITypeSymbol targetType, string namespaceName, bool encrypt, string encryptionKey)
     {
       var allInterfaceMethods = targetType.AllInterfaces
         .SelectMany(x => x.GetMembers())
@@ -173,6 +176,7 @@ namespace {namespaceName}
       {
         if (encrypt)
         {
+          message = message + $" + \"No real encryption in the demo, used key: {encryptionKey}\"";
           message = $"System.Convert.ToBase64String(Encoding.UTF8.GetBytes({message}))";
         }
 

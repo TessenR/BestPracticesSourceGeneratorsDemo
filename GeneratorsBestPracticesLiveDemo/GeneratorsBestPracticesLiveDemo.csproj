@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <CompilerVisibleProperty Include="LogEncryption" />
+    <AdditionalFiles Include="..\LogEncryption.key" />
   </ItemGroup>
 
   <ItemGroup>
