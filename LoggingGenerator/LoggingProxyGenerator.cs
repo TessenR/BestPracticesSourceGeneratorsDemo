@@ -16,27 +16,27 @@ namespace LoggingGenerator
     {
       var namespaceName = "LoggingImplDefault";
 
-
       var compilation = context.Compilation;
       var loggingTargets = compilation.SyntaxTrees
         .SelectMany(x => x.GetRoot()
           .DescendantNodesAndSelf()
           .OfType<TypeDeclarationSyntax>());
 
+      var logAttribute = compilation.GetTypeByMetadataName("LogAttribute");
+
       var targetTypes = new HashSet<ITypeSymbol>();
       foreach (var targetTypeSyntax in loggingTargets)
       {
         var semanticModel = compilation.GetSemanticModel(targetTypeSyntax.SyntaxTree);
-        var hasLogAttribute = targetTypeSyntax.AttributeLists
-          .SelectMany(x => x.Attributes)
-          .Any(x => x.Name.ToString() == "Log");
+        var targetType = semanticModel.GetDeclaredSymbol(targetTypeSyntax);
+        var hasLogAttribute = targetType.GetAttributes()
+          .Any(x => x.AttributeClass.Equals(logAttribute));
         if (!hasLogAttribute)
           continue;
 
         if (targetTypeSyntax is not InterfaceDeclarationSyntax)
           continue;
 
-        var targetType = semanticModel.GetDeclaredSymbol(targetTypeSyntax);
         targetTypes.Add(targetType);
       }
 
