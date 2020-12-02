@@ -27,6 +27,8 @@ namespace LoggingGenerator
       var targetTypes = new HashSet<ITypeSymbol>();
       foreach (var targetTypeSyntax in loggingTargets)
       {
+        context.CancellationToken.ThrowIfCancellationRequested();
+
         var semanticModel = compilation.GetSemanticModel(targetTypeSyntax.SyntaxTree);
         var targetType = semanticModel.GetDeclaredSymbol(targetTypeSyntax);
         var hasLogAttribute = targetType.GetAttributes()
@@ -42,6 +44,8 @@ namespace LoggingGenerator
 
       foreach (var targetType in targetTypes)
       {
+        context.CancellationToken.ThrowIfCancellationRequested();
+
         var proxySource = GenerateProxy(targetType, namespaceName);
         context.AddSource($"{targetType.Name}.Logging.cs", proxySource);
       }
