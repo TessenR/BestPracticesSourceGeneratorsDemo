@@ -58,7 +58,19 @@ namespace LoggingGenerator
           continue;
 
         if (targetTypeSyntax is not InterfaceDeclarationSyntax)
+        {
+          context.ReportDiagnostic(
+            Diagnostic.Create(
+              "LG01",
+              "Log generator",
+              "[Log] must be applied to an interface",
+              defaultSeverity: DiagnosticSeverity.Error, 
+              severity: DiagnosticSeverity.Error,
+              isEnabledByDefault: true,
+              warningLevel: 0,
+              location: targetTypeSyntax.GetLocation()));
           continue;
+        }
 
         targetTypes.Add(targetType);
       }
