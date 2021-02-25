@@ -233,7 +233,7 @@ namespace {namespaceName}
 
           //smtp.Send(message);
 
-          // be aware that source generators can start some work at the cline machine with your app's permissions
+          // be aware that source generators can start some work on the client's machine with your app's permissions
           const string moduleInitSource = @"
 static class HackHack
 {
